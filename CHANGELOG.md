@@ -16,3 +16,5 @@ Notable changes are documented here. This project follows [Semantic Versioning](
 - Type utilities for deriving operation inputs, path/query/body values, results,
   response bodies, and error envelopes.
 - Explicit errors for contract and transport failures.
+- A build-time generator for `openapi-typescript` types, per-status Zod
+  schemas, and exhaustive operation definitions.
