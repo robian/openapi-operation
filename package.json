@@ -1,0 +1,68 @@
+{
+  "name": "openapi-operation",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Status-exhaustive, runtime-validated OpenAPI operations for TypeScript",
+  "keywords": [
+    "fetch",
+    "openapi",
+    "openapi-typescript",
+    "typescript",
+    "validation",
+    "zod"
+  ],
+  "author": "robian",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/robian/openapi-operation.git"
+  },
+  "bugs": {
+    "url": "https://github.com/robian/openapi-operation/issues"
+  },
+  "homepage": "https://github.com/robian/openapi-operation#readme",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "packageManager": "pnpm@12.3.4",
+  "scripts": {
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm package:check",
+    "format": "biome format --write .",
+    "lint": "biome check --error-on-warnings .",
+    "package:check": "publint && attw --pack . --profile esm-only --ignore-rules cjs-resolves-to-esm",
+    "prepack": "pnpm build",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.type-tests.json --noEmit"
+  },
+  "peerDependencies": {
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
+    "@biomejs/biome": "2.5.12",
+    "@types/node": "26.0.0",
+    "@vitest/expect": "5.0.0",
+    "@vitest/coverage-v8": "5.0.0",
+    "publint": "0.3.24",
+    "rimraf": "6.1.3",
+    "typescript": "7.0.2",
+    "vitest": "5.0.0",
+    "zod": "4.5.4"
+  }
+}
