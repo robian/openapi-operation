@@ -13,5 +13,6 @@ Notable changes are documented here. This project follows [Semantic Versioning](
 - Ordered request middleware compatible with custom fetch implementations.
 - Ordered raw-response middleware for conditional application policies.
 - Status-indexed response rejection handlers that remove rejected statuses from result unions.
-- Type utilities for deriving operation results, response bodies, and error envelopes by status.
+- Type utilities for deriving operation inputs, path/query/body values, results,
+  response bodies, and error envelopes.
 - Explicit errors for contract and transport failures.

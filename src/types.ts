@@ -272,6 +272,36 @@ export type OperationResult<
 
 type OperationFunction = (...args: never[]) => unknown;
 
+/** The complete input object accepted by an operation function. */
+export type OperationInputOf<TOperation extends OperationFunction> =
+  TOperation extends (...args: infer TArguments) => unknown
+    ? TArguments extends [unknown, infer TInput, ...unknown[]]
+      ? TInput
+      : never
+    : never;
+
+type OperationInputMember<
+  TOperation extends OperationFunction,
+  TName extends "path" | "query" | "body",
+> =
+  OperationInputOf<TOperation> extends infer TInput
+    ? TName extends keyof TInput
+      ? NonNullable<TInput[TName]>
+      : never
+    : never;
+
+/** The path parameters accepted by an operation function. */
+export type OperationPathOf<TOperation extends OperationFunction> =
+  OperationInputMember<TOperation, "path">;
+
+/** The query parameters accepted by an operation function. */
+export type OperationQueryOf<TOperation extends OperationFunction> =
+  OperationInputMember<TOperation, "query">;
+
+/** The JSON request body accepted by an operation function. */
+export type OperationBodyOf<TOperation extends OperationFunction> =
+  OperationInputMember<TOperation, "body">;
+
 /** The resolved result union returned by an operation function. */
 export type OperationResultOf<TOperation extends OperationFunction> = Awaited<
   ReturnType<TOperation>

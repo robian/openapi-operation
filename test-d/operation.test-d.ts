@@ -1,7 +1,11 @@
 import { z } from "zod";
 import type {
+  OperationBodyOf,
   OperationErrorForStatus,
   OperationErrorOf,
+  OperationInputOf,
+  OperationPathOf,
+  OperationQueryOf,
   OperationResponseForStatus,
   OperationResultForStatus,
   OperationResultOf,
@@ -162,6 +166,37 @@ const operationWithDefaultQuery = defineJsonOperation({
   bodySchema: z.object({ name: z.string() }),
   responses: { 200: success, 400: badRequest, 404: notFound },
 });
+
+type ProductInput = OperationInputOf<typeof operationWithDefaultQuery>;
+const productInput: ProductInput = {
+  path: { product_id: "product-1" },
+  body: { name: "Desk Lamp" },
+};
+productInput.path.product_id satisfies string;
+
+type ProductPath = OperationPathOf<typeof operationWithDefaultQuery>;
+const productPath: ProductPath = { product_id: "product-1" };
+productPath.product_id satisfies string;
+
+type ProductQuery = OperationQueryOf<typeof operationWithDefaultQuery>;
+const productQuery: ProductQuery = { publish: true, tag: ["lighting"] };
+productQuery.publish satisfies boolean | undefined;
+
+type ProductBody = OperationBodyOf<typeof operationWithDefaultQuery>;
+const productBody: ProductBody = { name: "Desk Lamp" };
+productBody.name satisfies string;
+
+type Assert<TValue extends true> = TValue;
+type IsNever<TValue> = [TValue] extends [never] ? true : false;
+type HealthPathIsNever = Assert<IsNever<OperationPathOf<typeof operation>>>;
+type HealthQueryIsNever = Assert<IsNever<OperationQueryOf<typeof operation>>>;
+type HealthBodyIsNever = Assert<IsNever<OperationBodyOf<typeof operation>>>;
+declare const inputAssertions: [
+  HealthPathIsNever,
+  HealthQueryIsNever,
+  HealthBodyIsNever,
+];
+void inputAssertions;
 
 const operationWithRejection = defineJsonOperationWithRejection({
   path: "/products/{product_id}",
