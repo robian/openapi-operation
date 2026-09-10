@@ -253,12 +253,6 @@ All package errors extend `OpenApiOperationError` and retain the operation metho
 
 Request objects are required when the OpenAPI operation declares that input location, even if every property inside the object is optional. Pass `query: {}` for an empty declared query. To make the entire input optional safely, make its schema accept `undefined`, for example `QuerySchema.default({})`; the runtime schema will still run and apply its default.
 
-## What this package does not do
-
-It generates OpenAPI types, Zod schemas, and a flat operation map, but does not generate application-specific client namespaces, React hooks, query integrations, mocks, or framework code. It provides extension points for request transformation and response rejection, but does not own authentication, retries, correlation IDs, telemetry, framework integration, or application-specific error policy. Those policies belong in the client package that exposes the generated operations.
-
-It currently targets JSON operations with numeric response statuses. OpenAPI `default` responses, non-JSON media types, advanced query serialization styles, and streaming bodies are intentionally outside its scope.
-
 ## Development
 
 ```sh
