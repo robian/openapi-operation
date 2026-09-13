@@ -44,6 +44,14 @@ operations.ts
 
 `operations.ts` exports a flat `operations` object keyed by the OpenAPI `operationId`. Every operation must have an `operationId`, and only numeric response statuses are supported.
 
+Generated response object schemas validate declared fields and strip unknown
+fields, including in nested objects. This allows a backend to add response fields
+without breaking older clients or passing those fields into application code.
+Explicit dictionary entries remain validated and preserved. Request bodies remain
+strict. Status-specific validation, rejection of undocumented statuses, and all
+declared field constraints remain in effect. Manually supplied schemas retain
+their own unknown-field policy.
+
 Generated output can be committed and checked for drift in CI without rewriting it:
 
 ```sh

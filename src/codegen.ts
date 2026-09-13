@@ -234,7 +234,7 @@ async function generateInto(
             generateEachHttpStatus: true,
             strict: {
               body: true,
-              response: true,
+              response: false,
             },
           },
         },

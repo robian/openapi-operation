@@ -47,7 +47,41 @@
                   "required": ["id", "name"],
                   "properties": {
                     "id": { "type": "string" },
-                    "name": { "type": "string" }
+                    "name": { "type": "string" },
+                    "details": {
+                      "type": "object",
+                      "required": ["label"],
+                      "properties": {
+                        "label": { "type": "string", "minLength": 1 }
+                      }
+                    },
+                    "variants": {
+                      "type": "array",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "required": ["kind", "quantity"],
+                            "properties": {
+                              "kind": { "type": "string", "const": "stock" },
+                              "quantity": { "type": "integer", "minimum": 0 }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "required": ["kind", "url"],
+                            "properties": {
+                              "kind": { "type": "string", "const": "download" },
+                              "url": { "type": "string", "format": "uri" }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "counts": {
+                      "type": "object",
+                      "additionalProperties": { "type": "integer" }
+                    }
                   }
                 }
               }

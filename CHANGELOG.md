@@ -4,6 +4,12 @@ Notable changes are documented here. This project follows [Semantic Versioning](
 
 ## [Unreleased]
 
+### Changed
+
+- Generated response object schemas strip unknown fields instead of rejecting
+  them, allowing additive response changes while preserving declared field
+  validation. Request bodies remain strict.
+
 ### Added
 
 - Status-exhaustive JSON operation definitions bound to `openapi-typescript` path types.
