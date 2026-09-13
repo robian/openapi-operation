@@ -13,6 +13,7 @@ import { pathToFileURL } from "node:url";
 
 import openapiTS, { astToString } from "openapi-typescript";
 import { generate as generateOrval } from "orval";
+import ts from "typescript";
 
 const httpMethods = new Set([
   "delete",
@@ -31,8 +32,93 @@ type OpenApiOperation = {
 };
 
 type OpenApiDocument = {
+  [key: string]: unknown;
   paths?: Record<string, Record<string, OpenApiOperation | unknown>>;
 };
+
+function isObject(
+  value: unknown,
+): value is Record<string, unknown> & { $ref?: unknown; content?: unknown } {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasNoResponseContent(
+  response: unknown,
+  document: OpenApiDocument,
+): boolean {
+  const seen = new Set<string>();
+  while (isObject(response) && typeof response.$ref === "string") {
+    const reference = response.$ref;
+    // External references remain owned by Orval; never infer an empty body
+    // merely because a Reference Object itself has no content field.
+    if (!reference.startsWith("#/")) return false;
+    if (seen.has(reference))
+      throw new Error(`Cyclic response reference ${reference}`);
+    seen.add(reference);
+    let resolved: unknown = document;
+    for (const part of reference.slice(2).split("/")) {
+      const key = decodeURIComponent(part)
+        .replaceAll("~1", "/")
+        .replaceAll("~0", "~");
+      resolved = isObject(resolved) ? resolved[key] : undefined;
+    }
+    if (!isObject(resolved))
+      throw new Error(`Unresolved response reference ${reference}`);
+    response = resolved;
+  }
+  if (!isObject(response)) return false;
+  return (
+    !("content" in response) ||
+    (isObject(response.content) && Object.keys(response.content).length === 0)
+  );
+}
+
+async function normalizeBodylessResponses(
+  document: OpenApiDocument,
+  zodDirectory: string,
+): Promise<void> {
+  const symbols = new Set<string>();
+  for (const pathItem of Object.values(document.paths ?? {})) {
+    for (const [method, candidate] of Object.entries(pathItem)) {
+      if (!httpMethods.has(method)) continue;
+      const operation = candidate as OpenApiOperation;
+      if (!operation.operationId) continue;
+      for (const [status, response] of Object.entries(
+        operation.responses ?? {},
+      )) {
+        if (hasNoResponseContent(response, document)) {
+          symbols.add(`${pascalCase(operation.operationId)}${status}Response`);
+        }
+      }
+    }
+  }
+  for (const file of await findTypeScriptFiles(zodDirectory)) {
+    let source = await readFile(file, "utf8");
+    const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
+    const replacements: { start: number; end: number }[] = [];
+    for (const statement of ast.statements) {
+      if (!ts.isVariableStatement(statement)) continue;
+      for (const declaration of statement.declarationList.declarations) {
+        if (
+          ts.isIdentifier(declaration.name) &&
+          symbols.has(declaration.name.text) &&
+          declaration.initializer
+        ) {
+          replacements.push({
+            start: declaration.initializer.getStart(ast),
+            end: declaration.initializer.end,
+          });
+        }
+      }
+    }
+    // Replace only the selected response initializers, preserving other schemas
+    // and their formatting. In particular, JSON schema {} remains z.unknown().
+    for (const { start, end } of replacements.reverse()) {
+      source = `${source.slice(0, start)}zod.void()${source.slice(end)}`;
+    }
+    if (replacements.length > 0) await writeFile(file, source);
+  }
+}
 
 export type GenerateOpenApiOperationOptions = {
   /** OpenAPI JSON document. Relative paths are resolved from `cwd`. */
@@ -246,6 +332,7 @@ async function generateInto(
   const document = JSON.parse(
     await readFile(inputPath, "utf8"),
   ) as OpenApiDocument;
+  await normalizeBodylessResponses(document, zodDirectory);
   await writeFile(
     path.join(outputDirectory, "operations.ts"),
     await renderOperations(document, outputDirectory),

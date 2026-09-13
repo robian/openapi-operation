@@ -14,13 +14,17 @@
             "name": "product_id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "publish",
             "in": "query",
             "required": false,
-            "schema": { "type": "boolean" }
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "requestBody": {
@@ -31,7 +35,10 @@
                 "type": "object",
                 "required": ["name"],
                 "properties": {
-                  "name": { "type": "string", "minLength": 1 }
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  }
                 }
               }
             }
@@ -46,13 +53,20 @@
                   "type": "object",
                   "required": ["id", "name"],
                   "properties": {
-                    "id": { "type": "string" },
-                    "name": { "type": "string" },
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
                     "details": {
                       "type": "object",
                       "required": ["label"],
                       "properties": {
-                        "label": { "type": "string", "minLength": 1 }
+                        "label": {
+                          "type": "string",
+                          "minLength": 1
+                        }
                       }
                     },
                     "variants": {
@@ -63,16 +77,28 @@
                             "type": "object",
                             "required": ["kind", "quantity"],
                             "properties": {
-                              "kind": { "type": "string", "const": "stock" },
-                              "quantity": { "type": "integer", "minimum": 0 }
+                              "kind": {
+                                "type": "string",
+                                "const": "stock"
+                              },
+                              "quantity": {
+                                "type": "integer",
+                                "minimum": 0
+                              }
                             }
                           },
                           {
                             "type": "object",
                             "required": ["kind", "url"],
                             "properties": {
-                              "kind": { "type": "string", "const": "download" },
-                              "url": { "type": "string", "format": "uri" }
+                              "kind": {
+                                "type": "string",
+                                "const": "download"
+                              },
+                              "url": {
+                                "type": "string",
+                                "format": "uri"
+                              }
                             }
                           }
                         ]
@@ -80,7 +106,9 @@
                     },
                     "counts": {
                       "type": "object",
-                      "additionalProperties": { "type": "integer" }
+                      "additionalProperties": {
+                        "type": "integer"
+                      }
                     }
                   }
                 }
@@ -112,11 +140,50 @@
                   "type": "object",
                   "required": ["reason"],
                   "properties": {
-                    "reason": { "type": "string", "const": "not_found" }
+                    "reason": {
+                      "type": "string",
+                      "const": "not_found"
+                    }
                   }
                 }
               }
             }
+          },
+          "201": {
+            "description": "Created without a body"
+          },
+          "202": {
+            "description": "Unconstrained JSON",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "204": {
+            "description": "No content",
+            "content": {}
+          },
+          "409": {
+            "$ref": "#/components/responses/EmptyConflict"
+          },
+          "410": {
+            "$ref": "#/components/responses/JsonError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "EmptyConflict": {
+        "description": "Conflict without a body"
+      },
+      "JsonError": {
+        "description": "Unconstrained JSON error",
+        "content": {
+          "application/json": {
+            "schema": {}
           }
         }
       }

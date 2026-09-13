@@ -1,4 +1,16 @@
 export interface TestPaths {
+  "/response-bodies": {
+    get: {
+      responses: {
+        200: { content?: never };
+        201: { content: never };
+        202: { content: { "application/json": unknown } };
+        204: { content: never };
+        400: { content?: never };
+      };
+    };
+    head: { responses: { 200: { content?: never } } };
+  };
   "/products/{product_id}": {
     patch: {
       parameters: {

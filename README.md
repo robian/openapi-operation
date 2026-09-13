@@ -52,6 +52,24 @@ strict. Status-specific validation, rejection of undocumented statuses, and all
 declared field constraints remain in effect. Manually supplied schemas retain
 their own unknown-field policy.
 
+Responses with absent or empty `content` generate `z.void()` schemas. Their
+result body is `undefined`, including for statuses such as 200 and 201. The
+runtime accepts an empty body and throws `UnexpectedResponseBodyError` if a body
+is present. An explicitly unconstrained JSON schema remains `z.unknown()` and
+still requires a nonempty, valid JSON response. Missing content is not treated
+as a reason to skip an operation.
+
+Some backends serve file downloads but publish a success response with only a
+`description`, omitting `content` and its media type. The generator cannot infer
+a file response from an operation's name or description: it generates a bodyless
+response according to that contract. Generation and TypeScript compilation can
+therefore succeed, but calling the operation will throw
+`UnexpectedResponseBodyError` when the server sends file content. Documenting
+the file's media type fixes the missing contract information, but consuming it
+still requires non-JSON handling; this library's operations are JSON-only. If
+the API returns a download URL intended for browser navigation, let the browser
+follow that URL rather than call the download through a generated JSON operation.
+
 Generated output can be committed and checked for drift in CI without rewriting it:
 
 ```sh
@@ -243,6 +261,7 @@ The operation throws when the client and server cannot safely honor the contract
 - `OperationInputValidationError` — path, query, or body input failed its Zod schema;
 - `UndeclaredResponseStatusError` — the server returned a status absent from the OpenAPI operation;
 - `MissingResponseBodyError` — a response expected to contain JSON was empty;
+- `UnexpectedResponseBodyError` — a response declared bodyless contained a body;
 - `InvalidJsonResponseError` — the response was not valid JSON;
 - `OperationResponseValidationError` — response JSON failed the schema for its status.
 

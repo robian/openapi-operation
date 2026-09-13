@@ -9,10 +9,23 @@ import {
   type OperationInputValidationError,
   OperationResponseValidationError,
   UndeclaredResponseStatusError,
+  UnexpectedResponseBodyError,
 } from "../src/index.js";
 import type { TestPaths } from "./fixture.js";
 
 const defineJsonOperation = createJsonOperationFactory<TestPaths>();
+
+const responseBodies = defineJsonOperation({
+  path: "/response-bodies",
+  method: "get",
+  responses: {
+    200: z.void(),
+    201: z.undefined(),
+    202: z.unknown(),
+    204: z.void(),
+    400: z.void(),
+  },
+});
 
 const productPathSchema = z.object({ product_id: z.uuid() });
 const productQuerySchema = z.object({
@@ -136,6 +149,103 @@ function jsonResponse(data: unknown, init?: ResponseInit): Response {
 }
 
 describe("defineJsonOperation", () => {
+  it.each([200, 201, 204, 400])(
+    "accepts an empty documented %i response",
+    async (status) => {
+      const result = await responseBodies(
+        {
+          baseUrl: "https://api.example.test",
+          fetch: async () => new Response(null, { status }),
+        },
+        {},
+      );
+      expect(result).toEqual(
+        status < 300
+          ? { ok: true, status, data: undefined }
+          : { ok: false, status, error: { status, data: undefined } },
+      );
+      if (result.status === 200)
+        expectTypeOf(result.data).toEqualTypeOf<undefined>();
+    },
+  );
+
+  it.each(["{}", "null", '""', "file bytes", " "])(
+    "rejects any unexpected body: %s",
+    async (body) => {
+      await expect(
+        responseBodies(
+          {
+            baseUrl: "https://api.example.test",
+            fetch: async () => new Response(body, { status: 200 }),
+          },
+          {},
+        ),
+      ).rejects.toMatchObject({
+        name: "UnexpectedResponseBodyError",
+        method: "GET",
+        path: "/response-bodies",
+        status: 200,
+      });
+    },
+  );
+
+  it("supports HEAD and rejects bodies exposed by a custom transport", async () => {
+    const head = defineJsonOperation({
+      path: "/response-bodies",
+      method: "head",
+      responses: { 200: z.void() },
+    });
+    await expect(
+      head(
+        {
+          baseUrl: "https://api.example.test",
+          fetch: async () => new Response(null),
+        },
+        {},
+      ),
+    ).resolves.toEqual({ ok: true, status: 200, data: undefined });
+    await expect(
+      head(
+        {
+          baseUrl: "https://api.example.test",
+          fetch: async () => new Response("unexpected"),
+        },
+        {},
+      ),
+    ).rejects.toBeInstanceOf(UnexpectedResponseBodyError);
+  });
+
+  it("still requires valid JSON for an unconstrained JSON response", async () => {
+    for (const value of [null, 42, "text", [], { arbitrary: true }]) {
+      await expect(
+        responseBodies(
+          {
+            baseUrl: "https://api.example.test",
+            fetch: async () => jsonResponse(value, { status: 202 }),
+          },
+          {},
+        ),
+      ).resolves.toEqual({ ok: true, status: 202, data: value });
+    }
+    await expect(
+      responseBodies(
+        {
+          baseUrl: "https://api.example.test",
+          fetch: async () => new Response(null, { status: 202 }),
+        },
+        {},
+      ),
+    ).rejects.toBeInstanceOf(MissingResponseBodyError);
+    await expect(
+      responseBodies(
+        {
+          baseUrl: "https://api.example.test",
+          fetch: async () => new Response("not JSON", { status: 202 }),
+        },
+        {},
+      ),
+    ).rejects.toBeInstanceOf(InvalidJsonResponseError);
+  });
   it("validates input, renders the request, and validates a success", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(async (request) => {
       expect(request).toBeInstanceOf(Request);

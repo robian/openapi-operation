@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import { z } from "zod";
 
 import {
   InvalidJsonResponseError,
@@ -8,6 +8,7 @@ import {
   OperationInputValidationError,
   OperationResponseValidationError,
   UndeclaredResponseStatusError,
+  UnexpectedResponseBodyError,
 } from "./errors.js";
 import type {
   AvailableOperationMethod,
@@ -99,12 +100,21 @@ async function readResponseBody(
   response: Response,
   method: string,
   path: string,
+  schema: z.ZodType,
 ): Promise<unknown> {
-  if (method === "HEAD" || bodylessStatuses.has(response.status)) {
+  const text = await response.text();
+  if (
+    method === "HEAD" ||
+    bodylessStatuses.has(response.status) ||
+    schema instanceof z.ZodVoid ||
+    schema instanceof z.ZodUndefined
+  ) {
+    if (text.length > 0) {
+      throw new UnexpectedResponseBodyError(method, path, response.status);
+    }
     return undefined;
   }
 
-  const text = await response.text();
   if (text.length === 0) {
     throw new MissingResponseBodyError(method, path, response.status);
   }
@@ -314,7 +324,12 @@ function buildJsonOperationFactory<
 
       const data = parseResponse(
         responseSchema,
-        await readResponseBody(response, method, definition.path),
+        await readResponseBody(
+          response,
+          method,
+          definition.path,
+          responseSchema,
+        ),
         method,
         definition.path,
         response.status,

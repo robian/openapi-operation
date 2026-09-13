@@ -52,10 +52,34 @@ describe("generateOpenApiOperations", () => {
       require: createRequire(import.meta.url),
     }) as {
       UpdateProducts200Response: z.ZodType;
+      UpdateProducts201Response: z.ZodType;
+      UpdateProducts202Response: z.ZodType;
+      UpdateProducts204Response: z.ZodType;
+      UpdateProducts409Response: z.ZodType;
+      UpdateProducts410Response: z.ZodType;
       UpdateProducts400Response: z.ZodType;
       UpdateProducts404Response: z.ZodType;
       UpdateProductsBody: z.ZodType;
     };
+    for (const bodyless of [
+      schemas.UpdateProducts201Response,
+      schemas.UpdateProducts204Response,
+      schemas.UpdateProducts409Response,
+    ]) {
+      expect(bodyless.parse(undefined)).toBeUndefined();
+      for (const value of [null, {}, "", "file bytes"]) {
+        expect(bodyless.safeParse(value).success).toBe(false);
+      }
+    }
+    for (const unconstrained of [
+      schemas.UpdateProducts202Response,
+      schemas.UpdateProducts410Response,
+    ]) {
+      expect(unconstrained.parse({ arbitrary: true })).toEqual({
+        arbitrary: true,
+      });
+      expect(unconstrained.parse(null)).toBeNull();
+    }
     const success = schemas.UpdateProducts200Response;
     expect(
       success.parse({

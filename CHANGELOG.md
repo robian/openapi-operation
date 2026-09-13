@@ -4,6 +4,13 @@ Notable changes are documented here. This project follows [Semantic Versioning](
 
 ## [Unreleased]
 
+### Fixed
+
+- Responses with absent or empty content now generate void validators rather
+  than unknown validators, including local response references. Empty 200/201
+  responses are supported at runtime, unexpected bodies are rejected, and
+  explicitly unconstrained JSON responses retain JSON parsing and validation.
+
 ### Changed
 
 - Generated response object schemas strip unknown fields instead of rejecting

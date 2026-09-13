@@ -78,6 +78,20 @@ export class MissingResponseBodyError extends OpenApiOperationError {
   }
 }
 
+/** Raised when a response declared bodyless contains a body. */
+export class UnexpectedResponseBodyError extends OpenApiOperationError {
+  readonly status: number;
+
+  constructor(method: string, path: string, status: number) {
+    super(
+      `Unexpected response body for ${method} ${path} (${status})`,
+      method,
+      path,
+    );
+    this.status = status;
+  }
+}
+
 /** Raised when a response body is not valid JSON. */
 export class InvalidJsonResponseError extends OpenApiOperationError {
   readonly status: number;

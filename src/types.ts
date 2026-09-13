@@ -243,6 +243,10 @@ type ErrorStatus<TStatus extends number> = `${TStatus}` extends `2${string}`
   ? never
   : TStatus;
 
+type ResponseOutput<TSchema extends z.ZodType> = TSchema extends z.ZodVoid
+  ? undefined
+  : z.output<TSchema>;
+
 /** A result union discriminated by both `ok` and the exact HTTP status. */
 export type OperationResult<
   TSchemas extends Record<number, z.ZodType>,
@@ -254,7 +258,7 @@ export type OperationResult<
         : {
             ok: true;
             status: TStatus;
-            data: z.output<TSchemas[TStatus]>;
+            data: ResponseOutput<TSchemas[TStatus]>;
             error?: never;
           })
     | (ErrorStatus<TStatus> extends never
@@ -265,7 +269,7 @@ export type OperationResult<
             data?: never;
             error: {
               status: TStatus;
-              data: z.output<TSchemas[TStatus]>;
+              data: ResponseOutput<TSchemas[TStatus]>;
             };
           });
 }[Exclude<keyof TSchemas & number, TRejectedStatus>];

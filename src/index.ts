@@ -6,6 +6,7 @@ export {
   OperationInputValidationError,
   OperationResponseValidationError,
   UndeclaredResponseStatusError,
+  UnexpectedResponseBodyError,
 } from "./errors.js";
 export {
   createJsonOperationFactory,
